@@ -1,0 +1,158 @@
+/*
+  City Hall — the admin panel.
+
+  Route-local: imported by app/admin/layout.tsx, so none of it reaches the public site.
+  Deliberately plainer than the universe: this is a tool people use for an hour at a time, so it is
+  quiet, dense and legible. Same palette (void, bone, ash) with an amber accent so it still reads as
+  JYC, but no animation, no scenes, nothing that moves while someone is typing.
+*/
+
+.ah {
+  --amber: #e8c27a;
+  --panel: #10141b;
+  --panel-2: #141a23;
+  --edge: rgba(236, 231, 220, 0.1);
+  --ink: #ece7dc;
+  --muted: #8d9096;
+  background: #090c11;
+  color: var(--ink);
+  min-height: 100dvh;
+}
+
+.ah-kicker {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.ah-panel {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+}
+
+.ah-row {
+  background: var(--panel-2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.ah-row:hover {
+  border-color: var(--edge);
+  background: #171e29;
+}
+
+.ah-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.ah-nav a:hover {
+  background: rgba(236, 231, 220, 0.05);
+  color: var(--ink);
+}
+.ah-nav a[aria-current="page"] {
+  background: rgba(232, 194, 122, 0.12);
+  color: var(--amber);
+}
+
+.ah-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--amber);
+  color: #17120a;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.ah-btn:hover {
+  background: #f0d094;
+}
+.ah-btn[disabled] {
+  opacity: 0.55;
+  cursor: progress;
+}
+.ah-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--edge);
+}
+.ah-btn--ghost:hover {
+  background: rgba(236, 231, 220, 0.06);
+}
+.ah-btn--danger {
+  background: transparent;
+  color: #e88a8a;
+  border-color: rgba(232, 138, 138, 0.35);
+}
+.ah-btn--danger:hover {
+  background: rgba(232, 138, 138, 0.1);
+}
+
+.ah-field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+}
+.ah-field .ah-help {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.ah-input {
+  width: 100%;
+  background: #0b0f15;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.ah-input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(232, 194, 122, 0.15);
+}
+textarea.ah-input {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.6;
+}
+.ah-input[type="color"] {
+  height: 2.6rem;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.ah-note {
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid;
+}
+.ah-note--ok {
+  color: #a8d8b0;
+  border-color: rgba(168, 216, 176, 0.3);
+  background: rgba(168, 216, 176, 0.08);
+}
+.ah-note--bad {
+  color: #e8a0a0;
+  border-color: rgba(232, 138, 138, 0.35);
+  background: rgba(232, 138, 138, 0.08);
+}
