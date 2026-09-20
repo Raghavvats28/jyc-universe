@@ -1,0 +1,272 @@
+/* Event universe (components/events/*). Imported by EventUniverse and EventDetail.
+   Everything that moves is transform or opacity. `full` tier gets ambient loops;
+   lite (touch / weak devices) and static (reduced motion) get the still picture. */
+
+/* ---------- /events scene ---------- */
+
+.ev-root {
+  --a: #ece7dc;
+}
+
+.ev-svg {
+  font-family: var(--font-body), system-ui, sans-serif;
+  overflow: visible;
+}
+
+.ev-arc {
+  fill: none;
+  stroke: #ece7dc;
+  stroke-opacity: 0.14;
+  stroke-width: 1;
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+}
+.ev-arc-past {
+  stroke-dasharray: none;
+  stroke-opacity: 0.09;
+}
+.ev-now-dot {
+  fill: #ece7dc;
+  fill-opacity: 0.5;
+}
+.ev-now-label,
+.ev-trail-label {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  fill: #ece7dc;
+  fill-opacity: 0.4;
+}
+
+/* one light */
+.orb {
+  cursor: pointer;
+  outline: none;
+}
+.orb-hit {
+  fill: transparent;
+}
+.orb-body {
+  opacity: var(--g, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+  animation: orb-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(0.45s + var(--i, 0) * 0.13s);
+}
+@keyframes orb-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: var(--g, 1);
+    transform: scale(1);
+  }
+}
+.orb[data-on="true"] .orb-body {
+  opacity: 1;
+  transform: scale(1.16);
+}
+.orb-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.orb-ring {
+  fill: none;
+  stroke: var(--a);
+  stroke-opacity: 0.55;
+  stroke-width: 1.2;
+}
+.orb-ring2 {
+  fill: none;
+  stroke: var(--a);
+  stroke-opacity: 0.4;
+  stroke-width: 1;
+  stroke-dasharray: 3 9;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.orb-date {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-anchor: middle;
+  fill: #ece7dc;
+  fill-opacity: 0.55;
+  transition: fill-opacity 0.4s ease;
+}
+.orb[data-on="true"] .orb-date {
+  fill-opacity: 1;
+}
+.orb-focus {
+  fill: none;
+  stroke: var(--a);
+  stroke-opacity: 0;
+  stroke-dasharray: 2 6;
+}
+.orb:focus-visible .orb-focus,
+.trail-dot:focus-visible .orb-focus {
+  stroke-opacity: 0.85;
+}
+
+/* ambient loops: full tier only */
+.ev-root[data-tier="full"] .orb-halo {
+  animation: orb-breathe 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * -1.7s);
+}
+.ev-root[data-tier="full"] .orb[data-soon="true"] .orb-halo {
+  animation-duration: 3.4s;
+}
+.ev-root[data-tier="full"] .orb-ring2 {
+  animation: orb-spin 40s linear infinite;
+  animation-delay: calc(var(--i, 0) * -7s);
+}
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(0.93);
+    opacity: 0.78;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+@keyframes orb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* the dim trail of past events */
+.trail-dot {
+  cursor: pointer;
+  outline: none;
+}
+.trail-dot .dot {
+  fill: var(--a);
+  fill-opacity: var(--o, 0.35);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), fill-opacity 0.3s ease;
+}
+.trail-dot[data-on="true"] .dot {
+  fill-opacity: 0.95;
+  transform: scale(1.9);
+}
+
+/* hover / focus plate, drawn above every light */
+.ev-callout {
+  opacity: 0;
+  transform: translateX(var(--dx, 10px));
+  transition: opacity 0.3s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.ev-callout[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+.ev-co-leader {
+  fill: none;
+  stroke: var(--a);
+  stroke-opacity: 0.6;
+  stroke-width: 1;
+}
+.ev-co-bg {
+  fill: #0b0c0c;
+  fill-opacity: 0.9;
+  stroke: var(--a);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+.ev-co-bar {
+  fill: var(--a);
+}
+.ev-co-club {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  fill: var(--a);
+}
+.ev-co-title {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  fill: #ece7dc;
+}
+.ev-co-meta {
+  font-size: 13px;
+  fill: #ece7dc;
+  fill-opacity: 0.65;
+}
+.ev-co-open {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  fill: var(--a);
+}
+
+/* ---------- /events/[id] ---------- */
+
+.ev-detail {
+  --a: #ece7dc;
+}
+
+/* The portal grows out of the orb that was clicked (--fx / --fy are set from JS before it starts). */
+.ev-land[data-land] {
+  animation: ev-land 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ev-land {
+  from {
+    opacity: 0;
+    transform: translate(var(--fx, 0px), var(--fy, 0px)) scale(0.14);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ev-detail[data-tier="full"] .ev-breathe {
+  animation: ev-breathe 7s ease-in-out infinite;
+}
+@keyframes ev-breathe {
+  0%,
+  100% {
+    transform: scale(0.98);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+.ev-detail[data-tier="full"] .ev-spin {
+  animation: orb-spin 90s linear infinite;
+}
+.ev-detail[data-tier="full"] .ev-spin-rev {
+  animation: orb-spin 140s linear infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-body,
+  .orb-halo,
+  .orb-ring2,
+  .ev-land[data-land],
+  .ev-breathe,
+  .ev-spin,
+  .ev-spin-rev {
+    animation: none !important;
+  }
+}
+.ev-detail[data-tier="static"] .ev-land[data-land] {
+  animation: none;
+}
+
+.ev-spin,
+.ev-spin-rev {
+  transform-box: fill-box;
+  transform-origin: center;
+}

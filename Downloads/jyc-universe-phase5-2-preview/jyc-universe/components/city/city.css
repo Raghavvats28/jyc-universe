@@ -1,0 +1,905 @@
+/* ------------------------------------------------------------------
+   City scenes (components/city/*)
+   Imported by CityScene only, so it loads on the domain route and nowhere else.
+   Rules of the road: animate transform and opacity only, keep every loop tiny,
+   and switch loops off for the lite and static motion tiers.
+
+   Colours come from the city's theme (lib/city.ts, CityTheme). CityScene sets the
+   --t-* variables inline; the values below are Technical's and act as fallbacks.
+   ------------------------------------------------------------------ */
+
+.city-root {
+  --t-line: #5fd4c4;
+  --t-warm: #f4e7b6;
+  --t-cool: #8fe6d8;
+  --t-mast: #71827e;
+  --t-deep: #0a1211;
+  --t-road: #080d0d;
+  --t-plot: #15201e;
+  --t-plaza: #26403b;
+}
+
+.city-root {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.city-root[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.city-svg {
+  display: block;
+  overflow: visible;
+  --b: var(--t-line);
+}
+
+/* ---------- structure ---------- */
+
+.city-svg .edge {
+  stroke: var(--b);
+  stroke-opacity: 0.2;
+  stroke-width: 1;
+  stroke-linejoin: round;
+  transition: stroke-opacity 0.45s ease;
+}
+.city-svg .plinth {
+  stroke-opacity: 0.32;
+}
+.city-svg .glass {
+  stroke-opacity: 0.4;
+}
+
+/* ---------- windows ---------- */
+
+.win-off {
+  fill: var(--t-line);
+  fill-opacity: 0.07;
+}
+.win-warm {
+  fill: var(--t-warm);
+  fill-opacity: 0.86;
+}
+.win-cool {
+  fill: var(--t-cool);
+  fill-opacity: 0.8;
+}
+.win-accent {
+  fill: var(--b);
+  fill-opacity: 0.85;
+}
+.win-hover {
+  fill: var(--t-warm);
+  fill-opacity: 0.9;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.bld[data-club="coding"] .win-hover {
+  fill: var(--b);
+}
+.bld[data-active="true"] .win-hover,
+.bld[data-selected="true"] .win-hover {
+  opacity: 1;
+}
+.bld[data-active="true"] .edge,
+.bld[data-selected="true"] .edge {
+  stroke-opacity: 0.7;
+}
+
+/* ---------- DICE ---------- */
+
+.pip-lit {
+  fill: #f6e9b8;
+}
+.pip-bezel {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-opacity: 0.35;
+}
+.pip-halo {
+  fill: #f6e9b8;
+  fill-opacity: 0.09;
+  transition: fill-opacity 0.5s ease;
+}
+.bld[data-active="true"] .pip-halo,
+.bld[data-selected="true"] .pip-halo {
+  fill-opacity: 0.24;
+}
+
+/* ---------- signs, masts, lights ---------- */
+
+.sign-plate {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-opacity: 0.55;
+}
+.sign-text {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  fill: #ece7dc;
+}
+.sign-accent {
+  fill: var(--b);
+}
+.edge-light {
+  fill: var(--b);
+  fill-opacity: 0.5;
+  transition: fill-opacity 0.45s ease;
+}
+.bld[data-active="true"] .edge-light,
+.bld[data-selected="true"] .edge-light {
+  fill-opacity: 1;
+}
+.mast {
+  stroke: var(--t-mast);
+  stroke-width: 1.4;
+  fill: none;
+}
+.dish {
+  fill: #1c2b28;
+  stroke: var(--b);
+  stroke-opacity: 0.6;
+}
+.beacon-halo {
+  fill: var(--b);
+  fill-opacity: 0.22;
+}
+.beacon-core {
+  fill: var(--b);
+}
+.beacon-warn .beacon-core {
+  fill: #ff6a4d;
+}
+.beacon {
+  animation: city-blink 2.6s ease-in-out infinite;
+}
+
+/* ---------- CICE ---------- */
+
+.ring {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.5;
+  stroke-width: 1.4;
+}
+.radar-spin {
+  transform-origin: 0 0;
+  animation: city-spin 6s linear infinite;
+}
+.radar-arm {
+  stroke: var(--b);
+  stroke-width: 1.6;
+  stroke-opacity: 0.9;
+}
+.radar-tip {
+  fill: var(--b);
+}
+
+/* ---------- Robotics ---------- */
+
+.door {
+  fill: var(--t-deep);
+}
+.door-slat {
+  fill: #f0a24a;
+  fill-opacity: 0.32;
+}
+.hazard {
+  fill: #f0a24a;
+  fill-opacity: 0.8;
+}
+.gear-emblem {
+  fill: none;
+  stroke: var(--b);
+  stroke-width: 1.6;
+  stroke-opacity: 0.85;
+}
+.arm {
+  stroke: var(--b);
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+}
+.arm-joint {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-width: 1.5;
+}
+.arm-base {
+  fill: #111b19;
+  stroke: var(--b);
+  stroke-opacity: 0.5;
+}
+.arm-post {
+  fill: #1a2826;
+}
+.arm-a {
+  transform-origin: 0 0;
+  animation: city-arm-a 7s ease-in-out infinite alternate;
+}
+.arm-b {
+  transform-origin: 0 0;
+  animation: city-arm-b 5s ease-in-out infinite alternate;
+}
+
+/* ---------- ground ---------- */
+
+.slab-top {
+  stroke: var(--t-line);
+  stroke-opacity: 0.32;
+  stroke-width: 1.2;
+}
+.slab-edge {
+  stroke: var(--t-line);
+  stroke-opacity: 0.16;
+}
+.under {
+  stroke: none;
+}
+.grid-lines {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.07;
+}
+.road {
+  fill: var(--t-road);
+}
+.curb {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.16;
+}
+.lane {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.38;
+  stroke-width: 1.2;
+  stroke-dasharray: 9 11;
+}
+.crosswalk {
+  fill: #ece7dc;
+  fill-opacity: 0.2;
+}
+.plot {
+  fill: var(--t-plot);
+  stroke: var(--t-line);
+  stroke-opacity: 0.13;
+}
+.plaza-ring {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.35;
+}
+.plaza-ring-dash {
+  stroke-dasharray: 4 8;
+}
+.plaza-top {
+  fill: var(--t-plaza);
+  stroke: var(--t-line);
+  stroke-opacity: 0.6;
+}
+.pad {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.5;
+}
+.pad-h {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.7;
+  stroke-width: 2;
+}
+.fence {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.25;
+  stroke-dasharray: 3 4;
+}
+.tree {
+  fill: var(--t-line);
+  fill-opacity: 0.3;
+  stroke: var(--t-line);
+  stroke-opacity: 0.5;
+  stroke-width: 0.8;
+}
+.pole {
+  stroke: var(--t-mast);
+  stroke-width: 1.2;
+  fill: none;
+}
+.lamp-dot {
+  fill: var(--t-warm);
+}
+.lamp-glow {
+  fill: var(--t-warm);
+  fill-opacity: 0.1;
+}
+.link {
+  fill: none;
+  stroke: var(--t-line);
+  stroke-opacity: 0.18;
+  stroke-width: 1.2;
+  stroke-dasharray: 3 9;
+}
+
+/* ---------- traffic and aerial ---------- */
+
+.packet {
+  stroke: var(--t-warm);
+  stroke-width: 2;
+  stroke-linecap: round;
+  animation-name: city-drive;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.traffic g:nth-child(even) .packet {
+  stroke: var(--t-line);
+}
+.beam {
+  opacity: 0.8;
+}
+.beam-gem {
+  fill: var(--t-line);
+  fill-opacity: 0.85;
+}
+.drone {
+  animation: city-bob 3.2s ease-in-out infinite alternate;
+}
+.drone-body {
+  fill: #1a2826;
+  stroke: var(--t-line);
+  stroke-opacity: 0.7;
+}
+.drone-arm {
+  stroke: var(--t-mast);
+  stroke-width: 1.4;
+  fill: none;
+}
+.drone-light {
+  fill: var(--t-line);
+}
+
+/* ---------- Music city: shared speaker and sign parts ---------- */
+
+.spk-cone {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+}
+.spk-ring {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.35;
+}
+.spk-dust {
+  fill: var(--b);
+  fill-opacity: 0.55;
+}
+.spk-grille {
+  fill: var(--b);
+  fill-opacity: 0.16;
+}
+.mic-body {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-opacity: 0.85;
+  stroke-width: 1.4;
+}
+.mic-grille {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.55;
+}
+.mic-cradle {
+  fill: none;
+  stroke: var(--t-mast);
+  stroke-width: 1.6;
+}
+.mic-halo {
+  fill: var(--t-warm);
+  fill-opacity: 0.07;
+  transition: fill-opacity 0.5s ease;
+}
+.bld[data-active="true"] .mic-halo,
+.bld[data-selected="true"] .mic-halo {
+  fill-opacity: 0.2;
+}
+
+/* ---------- Music city: the stage (Band) ---------- */
+
+.pro-void {
+  fill: var(--t-deep);
+}
+.pro-cast {
+  fill: var(--t-deep);
+  fill-opacity: 0.92;
+}
+.pro-curtain {
+  fill: var(--t-deep);
+  fill-opacity: 0.5;
+}
+.pro-frame {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.55;
+  stroke-width: 1.4;
+}
+.mq-plate {
+  fill: var(--t-deep);
+  stroke: var(--b);
+  stroke-opacity: 0.6;
+}
+/* Marquee bulbs: one set is always on, the other set joins in on hover */
+.mq-bulb {
+  fill: var(--t-warm);
+  fill-opacity: 0.78;
+}
+.mq-bulb-hover {
+  fill-opacity: 0;
+  transition: fill-opacity 0.45s ease;
+}
+.bld[data-active="true"] .mq-bulb-hover,
+.bld[data-selected="true"] .mq-bulb-hover {
+  fill-opacity: 0.9;
+}
+/* The EQ: seven bars scaling in Y. The bars live in a wall's local frame where y points UP, so the
+   visual bottom is the box's minimum y: transform-origin 50% 0. Off on the lite and static tiers,
+   which show the bars at their drawn heights. */
+.eq-bar {
+  fill: var(--b);
+  fill-opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: city-eq 1.2s ease-in-out infinite alternate;
+}
+.bld[data-active="true"] .eq-bar {
+  fill-opacity: 1;
+}
+.truss {
+  stroke: var(--t-mast);
+  stroke-width: 1.5;
+  fill: none;
+}
+.truss-bar {
+  stroke-width: 2.4;
+}
+.can {
+  fill: var(--t-warm);
+}
+.can-halo {
+  fill: var(--t-warm);
+  fill-opacity: 0.16;
+}
+.beam-cone {
+  fill: var(--t-warm);
+  fill-opacity: 0.075;
+  transition: fill-opacity 0.5s ease;
+}
+.deck-pool {
+  fill: var(--t-warm);
+  fill-opacity: 0.1;
+  transition: fill-opacity 0.5s ease;
+}
+.bld[data-active="true"] .beam-cone,
+.bld[data-selected="true"] .beam-cone {
+  fill-opacity: 0.2;
+}
+.bld[data-active="true"] .deck-pool,
+.bld[data-selected="true"] .deck-pool {
+  fill-opacity: 0.26;
+}
+
+/* ---------- Music city: the studio (Vocals) ---------- */
+
+.foam {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.09;
+}
+.lid-ring {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.3;
+}
+.hazard-soft {
+  fill: var(--b);
+  fill-opacity: 0.5;
+}
+
+/* ---------- Music city: the hall (Instrumentals) ---------- */
+
+.cornice {
+  fill: var(--b);
+  fill-opacity: 0.4;
+}
+.skylight {
+  fill: var(--t-warm);
+  fill-opacity: 0.22;
+  transition: fill-opacity 0.5s ease;
+}
+.bld[data-active="true"] .skylight,
+.bld[data-selected="true"] .skylight {
+  fill-opacity: 0.5;
+}
+
+/* ---------- Music city: the record (DJ) ---------- */
+
+.vinyl-top {
+  fill: var(--t-deep);
+}
+.vinyl-groove {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.11;
+}
+.vinyl-sheen {
+  fill: var(--t-warm);
+  fill-opacity: 0.06;
+}
+.vinyl-label {
+  fill: var(--b);
+  fill-opacity: 0.82;
+  transition: fill-opacity 0.45s ease;
+}
+.bld[data-active="true"] .vinyl-label {
+  fill-opacity: 1;
+}
+.vinyl-spindle {
+  fill: var(--t-deep);
+}
+.arm-pivot {
+  fill: var(--t-deep);
+  stroke: var(--t-mast);
+  stroke-width: 1.4;
+}
+.arm-line {
+  fill: none;
+  stroke: var(--t-mast);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.arm-head {
+  fill: var(--b);
+}
+.ring-strong {
+  stroke-opacity: 0.75;
+}
+.door-glow {
+  fill-opacity: 0.95;
+}
+
+/* ---------- interaction ---------- */
+
+.bld {
+  cursor: pointer;
+  outline: none;
+}
+.bld-hit {
+  fill: transparent;
+}
+.bld-body {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bld[data-active="true"] .bld-body {
+  transform: translateY(-6px);
+}
+.plot-glow {
+  fill: url(#jc-plotglow);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.bld[data-active="true"] .plot-glow,
+.bld[data-selected="true"] .plot-glow {
+  opacity: 1;
+}
+.plot-br {
+  fill: none;
+  stroke: var(--b);
+  stroke-opacity: 0.28;
+  stroke-width: 1.4;
+  transition: stroke-opacity 0.4s ease;
+}
+.bld[data-active="true"] .plot-br,
+.bld[data-selected="true"] .plot-br {
+  stroke-opacity: 0.95;
+}
+
+.b-index,
+.b-label,
+.b-cue {
+  paint-order: stroke;
+  stroke: #0b0c0c;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+.b-index {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  fill: #8d9096;
+}
+.b-label {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  fill: #ece7dc;
+  fill-opacity: 0.72;
+  transition: fill 0.4s ease, fill-opacity 0.4s ease;
+}
+.b-cue {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  fill: var(--b);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bld[data-active="true"] .b-label,
+.bld[data-selected="true"] .b-label {
+  fill: var(--b);
+  fill-opacity: 1;
+}
+/* The hover callout carries "Enter" on devices with a pointer; on touch there is no hover,
+   so the cue under the name is always shown ("Tap to enter"). */
+@media (hover: none) {
+  .b-cue {
+    opacity: 0.8;
+    transform: none;
+  }
+}
+
+/* ---------- hover callout (a layer above all buildings) ---------- */
+
+.b-callout {
+  opacity: 0;
+  transform: translateX(var(--dx, 0));
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.b-callout[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+.co-leader {
+  fill: none;
+  stroke: var(--b);
+  stroke-width: 1.4;
+  stroke-opacity: 0.8;
+}
+.co-dot {
+  fill: var(--b);
+}
+.co-bg {
+  fill: #0b0c0c;
+  fill-opacity: 0.94;
+  stroke: var(--b);
+  stroke-opacity: 0.45;
+  stroke-width: 1;
+}
+.co-bar {
+  fill: var(--b);
+}
+.co-name {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  fill: #ece7dc;
+}
+.co-tag {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 12px;
+  fill: #ece7dc;
+  fill-opacity: 0.66;
+}
+.co-enter {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  fill: var(--b);
+}
+
+/* ---------- keyboard focus (twins of the buildings, see Building.tsx) ---------- */
+
+.bld-proxy {
+  fill: transparent;
+  stroke: none;
+  pointer-events: none;
+  outline: none;
+}
+.bld-proxy:focus-visible {
+  stroke: var(--b);
+  stroke-width: 2.5;
+  stroke-dasharray: 12 8;
+  stroke-linejoin: round;
+  fill: var(--b);
+  fill-opacity: 0.06;
+}
+
+/* ---------- minimap ---------- */
+
+.city-minimap {
+  display: block;
+  background: rgba(11, 12, 12, 0.62);
+  border: 1px solid rgba(236, 231, 220, 0.16);
+}
+.mm-island {
+  fill: var(--t-line);
+  fill-opacity: 0.1;
+  stroke: var(--t-line);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.mm-dot {
+  fill-opacity: 0.75;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), fill-opacity 0.3s ease;
+}
+.mm-dot[data-on="true"] {
+  transform: scale(1.7);
+  fill-opacity: 1;
+}
+.mm-view {
+  fill: rgba(236, 231, 220, 0.06);
+  stroke: rgba(236, 231, 220, 0.85);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Once a building is chosen, the rest of the city dims while the camera zooms in */
+.city-svg[data-selected="true"] .bld[data-selected="false"] {
+  opacity: 0.22;
+  transition: opacity 0.45s ease;
+}
+
+/* ---------- entrance ---------- */
+
+.bld-enter {
+  animation: city-rise 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.4s + var(--i, 0) * 0.11s);
+}
+
+/* ---------- keyframes (transform and opacity only) ---------- */
+
+@keyframes city-rise {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes city-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+@keyframes city-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes city-arm-a {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(10deg);
+  }
+}
+@keyframes city-arm-b {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(18deg);
+  }
+}
+@keyframes city-drive {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+@keyframes city-eq {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes city-bob {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+@keyframes city-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.city-stage {
+  animation: city-fade 1.2s ease-out both;
+}
+
+/* ---------- motion tiers ---------- */
+
+/* lite (phones, tablets, weak devices): no ambient loops at all */
+.city-root[data-tier="lite"] .eq-bar,
+.city-root[data-tier="lite"] .beacon,
+.city-root[data-tier="lite"] .radar-spin,
+.city-root[data-tier="lite"] .arm-a,
+.city-root[data-tier="lite"] .arm-b,
+.city-root[data-tier="lite"] .drone {
+  animation: none;
+}
+.city-root[data-tier="lite"] .traffic {
+  display: none;
+}
+
+/* static (prefers-reduced-motion): nothing moves on its own */
+.city-root[data-tier="static"] .eq-bar,
+.city-root[data-tier="static"] .beacon,
+.city-root[data-tier="static"] .radar-spin,
+.city-root[data-tier="static"] .arm-a,
+.city-root[data-tier="static"] .arm-b,
+.city-root[data-tier="static"] .drone,
+.city-root[data-tier="static"] .bld-enter,
+.city-root[data-tier="static"] .city-stage {
+  animation: none;
+}
+.city-root[data-tier="static"] .traffic {
+  display: none;
+}
+.city-root[data-tier="static"] .bld-body,
+.city-root[data-tier="static"] .win-hover,
+.city-root[data-tier="static"] .b-cue,
+.city-root[data-tier="static"] .b-callout,
+.city-root[data-tier="static"] .mm-dot {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .b-callout,
+  .mm-dot {
+    transition: none;
+  }
+  .eq-bar,
+  .beacon,
+  .radar-spin,
+  .arm-a,
+  .arm-b,
+  .drone,
+  .bld-enter,
+  .city-stage {
+    animation: none;
+  }
+  .traffic {
+    display: none;
+  }
+}
