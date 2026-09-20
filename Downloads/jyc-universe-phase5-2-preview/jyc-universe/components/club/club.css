@@ -1,0 +1,121 @@
+/* Club space (components/club/*). Imported by ClubScene only. */
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.club-cursor {
+  animation: club-blink 1.1s steps(1) infinite;
+}
+@keyframes club-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- signature interactions (Signature.tsx) ----------
+   Transform and opacity only. Live on the `full` tier; static and lite show the artwork still. */
+
+@keyframes club-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Robotics: gears turn; teeth counts set the durations, neighbours reverse */
+.sig[data-tier="full"] .sig-gear {
+  animation: club-spin var(--gdur, 80s) linear infinite;
+  animation-direction: var(--gdir, normal);
+}
+
+/* CICE: the radar sweep */
+.sig[data-tier="full"] .sig-sweep {
+  animation: club-spin 9s linear infinite;
+}
+
+/* Music: the wave layers drift one whole period, so the loop has no seam (--wp is set in Motif.tsx) */
+@keyframes club-drift {
+  to {
+    transform: translateX(calc(var(--wp, 200) * -1px));
+  }
+}
+.sig[data-tier="full"] .sig-wave {
+  animation: club-drift 26s linear infinite;
+}
+
+/* DICE: two layers drift against the pointer (--mx and --my run from -1 to 1) */
+.sig[data-tier="full"] .sig-l1 {
+  transform: translate(calc(var(--mx, 0) * -10px), calc(var(--my, 0) * -8px));
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sig[data-tier="full"] .sig-l2 {
+  transform: translate(calc(var(--mx, 0) * 22px), calc(var(--my, 0) * 16px));
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* DSC: nodes near the pointer swell and brighten (--k runs from 0 to 1) */
+.sig[data-tier="full"] .sig-node {
+  opacity: calc(0.55 + var(--k, 0) * 0.45);
+  transform: scale(calc(1 + var(--k, 0) * 1.4));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sig .sig-gear,
+  .sig .sig-sweep,
+  .sig .sig-wave {
+    animation: none;
+  }
+  .sig .sig-l1,
+  .sig .sig-l2,
+  .sig .sig-node {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Outlined giant numerals for the timeline */
+.club-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--accent);
+}
+
+/* Underline that sweeps in on hover for link rows */
+.club-sweep {
+  position: relative;
+}
+.club-sweep::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.club-sweep:hover::after,
+.club-sweep:focus-visible::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-cursor {
+    animation: none;
+  }
+  .club-sweep::after {
+    transition: none;
+  }
+}

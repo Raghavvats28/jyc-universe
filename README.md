@@ -48,10 +48,10 @@ Only `transform` and `opacity` are animated. Reduced motion falls back to a plai
 ## Performance notes
 
 - One canvas for all stars: 160 (desktop) / 70 (lite), ~30fps idle, paused in background tabs, DPR capped.
-- The universe map (`components/universe/UniverseMap.tsx`) is HTML nodes holding small SVGs; hover, tap-preview and the 2D/3D switch are CSS driven (`app/globals.css`, `.u-*` classes), no per-frame JS except desktop pointer parallax.
+- Constellation is a single SVG; hover is CSS driven (`app/globals.css`), no per-frame JS except desktop pointer parallax.
 - Planets are pure CSS gradients, no images.
 - Phones/touch/low-end devices get the `lite` tier (`hooks/useMotionTier.ts`).
-- No 3D dependency. The universe's 3D view is plain CSS 3D transforms (no WebGL). If a real 3D engine is ever needed, load it with `next/dynamic` on the route that needs it only.
+- No 3D dependency yet. When Phase 2 needs any, load it with `next/dynamic` on the city route only.
 
 ## Content
 
@@ -337,61 +337,6 @@ camera (`useCityCamera.ts`) already handled touch drag correctly, so removing th
 0.6 to 0.34 so a phone-width viewport fits most of the island without heavy panning. Phones already
 run the lighter `lite` motion tier automatically, so the ambient loops (traffic, beacons, radar, the
 drone) are off there regardless. See PERFORMANCE.md for what this costs in bundle size.
-
-
-## Phase 5.3 (Sun logo in the header)
-
-`components/Hud.tsx`'s top-left "JYC" was plain text; it now shows the same sun-and-planets
-`LogoMark` used on the opening screen and the mobile world list, at 30px, next to the wordmark. One
-component, one set of CSS (`.logo-*` in `app/globals.css`) — nowhere styles this mark on its own.
-
-
-## Phase 5.4 (Mobile "pick a world" as an orbit)
-
-`components/universe/MobileUniverse.tsx` was a plain vertical list; it's now a radial layout matching
-the idea sketched for it: JYC (`LogoMark`, the same sun as everywhere else) sits in the centre, and
-the six worlds sit at fixed points around it in a ring, each joined to the centre by a thin
-accent-coloured spoke. Tapping a world travels there, same as clicking its constellation on desktop.
-
-**Deliberately not animated:** the six world positions themselves never move. One small ambient
-point does drift around the ring for the "revolving" feel (`.orbit-spin` in `app/globals.css`,
-transform-only, off under reduced motion) — a moving tap target would be worse to use and would
-fight VoiceOver/TalkBack, which read the ring as a plain list of six buttons regardless of the
-picture around them.
-
-Sizing (`RADIUS`, the label's `max-w`) was tuned by hand for a ~320px-wide phone; a real device check
-is worth doing since I can't run a browser here — see PERFORMANCE.md's "still to verify" list.
-
-## Phase 5.5 (Universe map: 2D and 3D, desktop and phone)
-
-`components/universe/Constellation.tsx` and `MobileUniverse.tsx` are replaced by one map,
-`components/universe/UniverseMap.tsx`, for every screen size. The structure is the one in the
-reference image: the JYC logo in the middle, six constellations around it, each joined to the hub
-by a thin accent-coloured spoke and named next to its drawing.
-
-- **Layouts.** `wide` (tablet and desktop) is the existing 1200 x 800 map using each domain's
-  `position`. `tall` (phones) is a portrait 400 x 600 map: hub in the middle, worlds in two
-  columns. Both are drawn on a fixed stage and scaled to fit, so the drawing is the same everywhere.
-  A domain with no phone slot of its own is placed on a ring around the hub (`TALL_SLOTS`).
-- **Views.** `ViewToggle` switches 2D / 3D (remembered in `localStorage`, key `jyc-universe-view`).
-  3D is CSS 3D: the plane tilts back (`rotateX`), every world is counter-rotated to face you and
-  floats above its own ring (`translateZ` along the plane's normal), the logo floats above the
-  hub. Desktop turns the map toward the pointer; phones get a slow sway (`.u-sway`).
-  Only `transform` and `opacity` animate; reduced motion switches views instantly.
-- **Hover.** Hovering (or keyboard-focusing) a world lights its spoke, brightens its lines,
-  enlarges its planet, shows its tagline, dims the other worlds, and makes every star shine: a
-  white core, a soft halo and a twinkling four-point spark (`.cglow`, `.cspark`, `.ccore`).
-- **Phones.** There is no hover, so the first tap previews a world (the same highlight and shine,
-  plus its name and tagline in the panel under the map) and a second tap, or the Enter button,
-  travels. Desktop is unchanged: click travels. To go back to one-tap travel on phones, make
-  `pick` in `UniverseMap.tsx` always call `go`.
-- **Logo.** `LogoMark` and `public/jyc-logo.png` are untouched: the same circular badge, drawn at
-  the centre of the map.
-
-Things learned while building it, worth keeping: Chrome clips whatever a 3D-transformed layer
-draws outside its own box, so each world's button is sized to hold its whole drawing and its name
-(`ART_W`, `ART_H`, `spec.label`); and labels face away from the hub on the wide map (except the
-top and bottom worlds) so neighbouring names never collide.
 
 ## Roadmap
 

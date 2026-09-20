@@ -29,7 +29,7 @@ paid on every route, including `/robots.txt`-adjacent static pages.
 | Route | Heaviest client code | Status |
 | --- | --- | --- |
 | `/` | `LogoIntro` | fine |
-| `/universe` | `UniverseMap` (2D/3D, both layouts; only the layout in use renders) | fine — 3D is CSS transforms, no WebGL |
+| `/universe` | `Constellation` / `MobileUniverse` | fine |
 | `/domain/[id]` | city engine (`CityScene`, `buildings`, `musicBuildings`, `useCityCamera`) ≈ **58 kB of source** | `next/dynamic`, but now loads for every screen size — see Phase 3F below |
 | `/club/[id]` | six floors + `Motif` + `Signature` | **watch** — all six floors are in one chunk |
 | `/events` | `EventUniverse` (15 kB source) | already `next/dynamic`, ≥900px only |
@@ -98,29 +98,3 @@ city was asked for directly.
 - [ ] `/robots.txt` points at the absolute sitemap URL (needs `NEXT_PUBLIC_SITE_URL` in prod)
 - [ ] Share a `/club/dice` and an `/events/*` link — the generated card is the club's accent
 - [ ] Lighthouse on `/gallery` (phone): LCP < 2.5 s, CLS 0
-
-## Phase 5.5: universe map (2D / 3D)
-
-- No new dependencies and no WebGL: 3D is CSS `perspective` + `rotateX` / `translateZ`. Only `transform` and `opacity`
-  animate (view switch, hover lift, name cross-fade, pointer tilt).
-- Pointer tilt/parallax runs through framer-motion values (no React re-renders on move) and only on the `full` tier.
-- Each world's paint box is now measured from its dust, so boxes are larger (up to about 400 x 240 stage units on the wide map).
-  They are separate compositing layers in 3D; six of them is fine, but check GPU memory on low-end Android.
-- Each world renders two name spans (one per side) for the 3D cross-fade: 12 small text nodes, negligible.
-
-## Still to verify (Phase 5.5)
-
-This pass was code review only: no network (npm install blocked) and no devices. Nothing below has been run.
-
-- [ ] `npm install`, `npx tsc --noEmit`, `npm run build` (types of `useTransform([...], ...)` and `useSpring` in UniverseMap)
-- [ ] Desktop, real framer-motion: entrance animations, 3D pointer tilt, hover shine, no jump when switching 2D/3D with the pointer off-centre
-- [ ] Travel from 3D: the zoom opens from the planet, not from beside it
-- [ ] 3D: Literary and Music names clear of the hub orbit; dust rings not clipped at any world's edge
-- [ ] Hover in 2D/3D: neighbouring worlds do not steal each other's hover (only `.u-hit` takes the pointer)
-- [ ] iPhone Safari: 3D view (no flicker, no blank layers), first tap previews, second tap or Enter travels, targets >= 44px
-- [ ] Android Chrome: same, plus the slow sway in 3D
-- [ ] iPad portrait and small landscape phones (wide layout): tap preview panel shows and Enter works; names readable
-- [ ] VoiceOver / TalkBack: does activation arrive as a click with detail 0 (one-step travel) or not (two-step + Enter button)?
-- [ ] Keyboard in 3D: Tab shows the dashed outline on the base drawing, Enter travels
-- [ ] prefers-reduced-motion: no entrance motion, no tilt, no sway, 2D/3D switch is instant
-- [ ] Tune if needed: `--u-tilt` (52 wide / 36 tall), `perspective` (1600 / 1400), `DEPTHS`, `TALL_SLOTS`
