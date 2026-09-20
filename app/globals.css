@@ -1,0 +1,617 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: #0b0c0c;
+}
+
+body {
+  min-height: 100dvh;
+  background: #0b0c0c;
+  color: #ece7dc;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(236, 231, 220, 0.85);
+  color: #0b0c0c;
+}
+
+:focus-visible {
+  outline: 1px solid rgba(236, 231, 220, 0.75);
+  outline-offset: 4px;
+}
+
+/* Static film grain: rasterised once, never animated. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Soft edge darkening so scenes feel lit from the middle. */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ------------------------------------------------------------------
+   Universe map (components/universe/UniverseMap.tsx)
+
+   One map, two layouts (wide: desktop and tablet, tall: phones) and two views (2d, 3d). The stage
+   carries data-view and data-layout, so switching view is one attribute flip and the browser
+   animates the rest. Hover / tap-preview state is data-active / data-dim on each .u-node.
+
+   3D is plain CSS 3D, no WebGL: the plane tilts back (rotateX), every world stands up again
+   (counter-rotated so it always faces the viewer) and floats above its own ring on the plane
+   (translateZ along the plane's normal). Only transform and opacity ever animate.
+   ------------------------------------------------------------------ */
+
+.u-stage {
+  --u-tilt: 52deg;
+  --u-name: 22px;
+  --u-tag: 13px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  perspective: 1600px;
+}
+.u-stage[data-layout="tall"] {
+  --u-tilt: 36deg;
+  --u-name: 14px;
+  --u-tag: 12px;
+  perspective: 1400px;
+}
+
+.u-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.u-3d {
+  transform-style: preserve-3d;
+}
+
+.u-plane {
+  transform: rotateX(0deg);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.u-stage[data-view="3d"] .u-plane {
+  transform: rotateX(var(--u-tilt));
+}
+
+/* Phones (and weak devices) get a slow sway in 3D instead of pointer tracking. */
+.u-sway[data-sway="true"] {
+  animation: u-sway 14s ease-in-out infinite alternate;
+}
+@keyframes u-sway {
+  from {
+    transform: rotateY(-5deg);
+  }
+  to {
+    transform: rotateY(5deg);
+  }
+}
+
+/* Hub orbit: an ellipse in 2D, a true circle on the tilted plane in 3D. */
+.u-ring {
+  fill: none;
+  stroke: #ece7dc;
+  stroke-opacity: 0.12;
+  stroke-width: 0.8;
+  transition: opacity 0.6s ease;
+}
+.u-ring-round {
+  opacity: 0;
+}
+.u-stage[data-view="3d"] .u-ring-round {
+  opacity: 1;
+}
+.u-stage[data-view="3d"] .u-ring-flat {
+  opacity: 0;
+}
+
+.u-glow {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(236, 231, 220, 0.09), rgba(236, 231, 220, 0) 70%);
+}
+
+/* The real logo, at the middle of the map. In 3D it stands up and floats above the plane. */
+.u-hub {
+  --z: 0px;
+  --counter: 0deg;
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%) translateZ(var(--z)) rotateX(var(--counter));
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.u-stage[data-view="3d"] .u-hub {
+  --z: 34px;
+  --counter: calc(var(--u-tilt) * -1);
+}
+
+/* 3D only: a ring on the plane under each world. */
+.u-pad {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.u-stage[data-view="3d"] .u-pad {
+  opacity: 0.3;
+}
+.u-stage[data-view="3d"] .u-pad[data-dim="true"] {
+  opacity: 0.1;
+}
+.u-stage[data-view="3d"] .u-pad[data-active="true"] {
+  opacity: 0.85;
+}
+
+/* One world. Flat on the map in 2D; standing up above its ring in 3D. */
+.u-node {
+  --z: 0px;
+  --counter: 0deg;
+  --s: 1;
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  border-radius: 50%;
+  overflow: visible;
+  outline: none;
+  /* The button box is the paint box (sized to hold all the dust); only .u-hit takes the pointer. */
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(var(--z)) rotateX(var(--counter)) scale(var(--s));
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+}
+.u-stage[data-view="3d"] .u-node {
+  --z: var(--zd, 60px);
+  --counter: calc(var(--u-tilt) * -1);
+}
+.u-node[data-active="true"] {
+  --s: 1.08;
+}
+.u-stage[data-view="3d"] .u-node[data-active="true"] {
+  --z: calc(var(--zd, 60px) + 70px);
+}
+.u-node[data-dim="true"] {
+  opacity: 0.38;
+}
+.u-hit {
+  position: absolute;
+  display: block;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 16px;
+}
+.u-node:focus-visible .u-hit {
+  outline: 1px dashed var(--accent);
+  outline-offset: 2px;
+}
+.u-art {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: block;
+}
+.u-art svg {
+  display: block;
+  overflow: visible;
+}
+
+.u-label {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  /* Each world carries a name on both sides; the view picks which one shows (opacity cross-fade). */
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.u-stage[data-view="2d"] .u-label[data-in2d="true"],
+.u-stage[data-view="3d"] .u-label[data-in3d="true"] {
+  opacity: 1;
+}
+.u-label[data-side="bottom"] {
+  justify-content: flex-start;
+  padding-top: 4px;
+}
+.u-label[data-side="top"] {
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  padding-bottom: 4px;
+}
+.u-name {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: var(--u-name);
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  color: #ece7dc;
+  opacity: 0.55;
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.u-stage[data-layout="wide"] .u-name {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.u-tag {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: var(--u-tag);
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.u-node[data-active="true"] .u-name {
+  opacity: 1;
+  transform: scale(1.06);
+}
+.u-node[data-active="true"] .u-tag {
+  opacity: 0.95;
+}
+/* On phones and other touch screens the tagline lives in the preview panel instead. */
+.u-stage[data-layout="tall"] .u-tag,
+.u-stage[data-touch="true"] .u-tag {
+  display: none;
+}
+
+/* The drawing of a world (shared by both views). --u-stroke keeps thin lines visible when the drawing is scaled down. */
+.cline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(0.9px * var(--u-stroke, 1));
+  stroke-opacity: 0.34;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.3s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-delay: var(--delay, 0s);
+  transition: stroke-opacity 0.5s ease, stroke-width 0.5s ease;
+}
+.u-node[data-active="true"] .cline {
+  stroke-opacity: 0.95;
+  stroke-width: calc(1.5px * var(--u-stroke, 1));
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.cstar,
+.cdust {
+  fill: var(--accent);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.cstar {
+  fill-opacity: 0.85;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), fill-opacity 0.5s ease;
+}
+.cdust {
+  fill-opacity: 0.3;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), fill-opacity 0.7s ease;
+}
+.u-node[data-active="true"] .cstar {
+  transform: scale(1.7);
+  fill-opacity: 1;
+}
+.u-node[data-active="true"] .cdust {
+  transform: scale(1.8);
+  fill-opacity: 0.75;
+}
+
+/* Shine on hover: white core, soft halo and a slowly twinkling four-point spark on every star of the hovered world. opacity + transform only. */
+.cglow,
+.cspark,
+.ccore {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
+}
+.cglow {
+  fill: var(--accent);
+  transform: scale(0.4);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cspark {
+  fill: #fffaf0;
+  transform: scale(0.3) rotate(0deg);
+  transition: opacity 0.4s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ccore {
+  fill: #ffffff;
+  transition: opacity 0.4s ease;
+}
+.u-node[data-active="true"] .cglow {
+  opacity: 0.4;
+  transform: scale(1);
+}
+.u-node[data-active="true"] .cspark {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  animation: u-twinkle 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--k, 0) * -0.37s);
+}
+.u-node[data-active="true"] .ccore {
+  opacity: 1;
+}
+@keyframes u-twinkle {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.75) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(45deg);
+  }
+}
+
+.cplanet {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.u-node[data-active="true"] .cplanet {
+  transform: scale(1.14);
+}
+.cring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(0.8px * var(--u-stroke, 1));
+  stroke-opacity: 0.3;
+  transition: stroke-opacity 0.5s ease;
+}
+.chalo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(1px * var(--u-stroke, 1));
+  stroke-opacity: 0;
+  transition: stroke-opacity 0.5s ease;
+}
+.u-node[data-active="true"] .chalo {
+  stroke-opacity: 0.55;
+}
+.u-node[data-active="true"] .cring {
+  stroke-opacity: 0.6;
+}
+
+.cspoke {
+  fill: none;
+  stroke: #ece7dc;
+  stroke-opacity: 0.07;
+  stroke-width: 0.8;
+  transition: stroke-opacity 0.6s ease, stroke 0.6s ease;
+}
+.cspoke[data-hot="true"] {
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
+}
+.ccollab {
+  fill: none;
+  stroke: #ece7dc;
+  stroke-opacity: 0.1;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 7;
+  transition: stroke-opacity 0.6s ease;
+}
+.ccollab[data-hot="true"] {
+  stroke-opacity: 0.5;
+}
+/* Phones show the map smaller, so the spokes need a little more weight to stay visible. */
+.u-stage[data-layout="tall"] .cspoke {
+  stroke-opacity: 0.16;
+  stroke-width: 1;
+}
+.u-stage[data-layout="tall"] .ccollab {
+  stroke-opacity: 0.16;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cline {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .u-plane,
+  .u-node,
+  .u-hub,
+  .u-label,
+  .u-pad,
+  .u-ring {
+    transition: none;
+  }
+  .u-sway[data-sway="true"],
+  .u-node[data-active="true"] .cspark {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Route-transition loading scene (components/TravelLoading.tsx)
+
+   This shows underneath TravelProvider's cover circle while a slow route renders,
+   so it has to read as "the scene is still settling", not as a spinner. Two rings
+   breathe outward from the centre the cover just collapsed into. transform +
+   opacity only, and nothing at all when the visitor asked for less motion.
+--------------------------------------------------------------------------- */
+.tl-ring {
+  animation: tl-pulse 2.4s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+  transform: scale(0.35);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.tl-ring--late {
+  animation-delay: 1.2s;
+}
+@keyframes tl-pulse {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.tl-label {
+  animation: tl-fade 2.4s ease-in-out infinite;
+}
+@keyframes tl-fade {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-ring,
+  .tl-ring--late {
+    animation: none;
+    transform: scale(0.8);
+    opacity: 0.25;
+  }
+  .tl-label {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Opening scene: the constellation layer drifts, very slowly, so the background
+   is never completely still. One transform on one <g>; no JS, no repaint of the
+   logo or the rings. Off entirely for reduced motion.
+--------------------------------------------------------------------------- */
+.intro-drift {
+  animation: intro-drift 46s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes intro-drift {
+  0% {
+    transform: translate3d(-10px, 5px, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6px, -7px, 0) scale(1.012);
+  }
+  100% {
+    transform: translate3d(12px, 4px, 0) scale(1.004);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-drift {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   LogoMark as a sun: corona glow, thin orbit rings, a few small planets.
+   transform + opacity only. Rings are invisible (border is the only visible trace of the ring
+   itself comes from CityMinimap-style thin strokes) — the ring element only exists to give its
+   planet a circular path via rotation, so nothing here repaints on scroll or drag.
+--------------------------------------------------------------------------- */
+.logo-corona {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(232, 194, 122, 0.32), rgba(232, 194, 122, 0) 72%);
+  animation: logo-breathe 6s ease-in-out infinite;
+}
+
+.logo-orbit {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(232, 194, 122, 0.22);
+  animation: logo-spin 22s linear infinite;
+}
+.logo-orbit--slow {
+  border-color: rgba(232, 194, 122, 0.14);
+  animation-duration: 34s;
+  animation-direction: reverse;
+}
+
+.logo-planet {
+  position: absolute;
+  border-radius: 999px;
+  background: #f0d094;
+  box-shadow: 0 0 6px 1px rgba(240, 208, 148, 0.7);
+}
+.logo-planet--a {
+  top: -3px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+}
+.logo-planet--b {
+  bottom: 6%;
+  right: 4%;
+  width: 5px;
+  height: 5px;
+  background: #e0559b;
+  box-shadow: 0 0 6px 1px rgba(224, 85, 155, 0.6);
+}
+.logo-planet--c {
+  top: 8%;
+  left: 2%;
+  width: 6px;
+  height: 6px;
+  background: #68d96a;
+  box-shadow: 0 0 6px 1px rgba(104, 217, 106, 0.55);
+}
+
+@keyframes logo-breathe {
+  0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes logo-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-corona,
+  .logo-orbit,
+  .logo-orbit--slow {
+    animation: none;
+  }
+}
